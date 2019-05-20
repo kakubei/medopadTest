@@ -4,12 +4,44 @@ let position: CGPoint = CGPoint(x: 1, y: 2)
 
 enum PieceType {
     case tall, fat, wide, normal, empty, board
+    
+    var width: Int {
+        switch self {
+        case .tall:
+            return 1
+        case .fat:
+            return 2
+        case .wide:
+            return 1
+        case .normal:
+            return 1
+        case .empty:
+            return 1
+        case .board:
+            return 4
+        }
+    }
+    
+    var height: Int {
+        switch self {
+        case .tall:
+            return 2
+        case .fat:
+            return 2
+        case .wide:
+            return 2
+        case .normal:
+            return 1
+        case .empty:
+            return 1
+        case .board:
+            return 5
+        }
+    }
 }
 
 protocol Griddable {
     var name: PieceType { get }
-    var witdh: Int { get }
-    var height: Int { get }
     var movable: Bool { get }
 }
 
@@ -36,26 +68,27 @@ typealias GridSpace = Int
 
 struct Piece: Griddable {
     var name: PieceType
-    var witdh: Int
-    var height: Int
-    
     var gridSpace: [GridSpace] = []
     
-    init(_ name: PieceType, _ width: Int, _ height: Int) {
+    init(_ name: PieceType) {
         self.name = name
-        self.witdh = width
-        self.height = height
+        setGridSpace()
     }
     
     private func setGridSpace() {
+        /*
+         1. from its origin (top left)...
+         2. based on its type...
+         3. add X or Y to the grid
+         4. account for the origin as well
+        */
+        
         
     }
 }
 
 struct Board: Griddable {
     var name: PieceType = .board
-    var witdh: Int = 4
-    var height: Int = 5
     var movable: Bool = false
     
     var pieces: [Piece] = []
@@ -102,25 +135,25 @@ struct Board: Griddable {
     private func fits(piece: Piece) -> Region {
         // true if both width and height are moving to .empty positions
         return { _ in
-            self.pieces[piece.witdh].name == .empty &&
-            self.pieces[piece.height].name == .empty
+            self.pieces[piece.name.width].name == .empty &&
+            self.pieces[piece.name.height].name == .empty
         }
     }
 }
 
 // MARK: Pieces
-let tall1 = Piece(.tall, 1, 2)
-let tall2 = Piece(.tall, 1, 2)
-let tall3 = Piece(.tall, 1, 2)
-let tall4 = Piece(.tall, 1, 2)
+let tall1 = Piece(.tall)
+let tall2 = Piece(.tall)
+let tall3 = Piece(.tall)
+let tall4 = Piece(.tall)
 
-let fat = Piece(.fat, 2, 2)
-let wide = Piece(.wide, 2, 1)
+let fat = Piece(.fat)
+let wide = Piece(.wide)
 
-let normal1 = Piece(.normal, 1, 1)
-let normal2 = Piece(.normal, 1, 1)
-let normal3 = Piece(.normal, 1, 1)
-let normal4 = Piece(.normal, 1, 1)
+let normal1 = Piece(.normal)
+let normal2 = Piece(.normal)
+let normal3 = Piece(.normal)
+let normal4 = Piece(.normal)
 
-let empty1 = Piece(.empty, 1, 1)
-let empty2 = Piece(.empty, 1, 1)
+let empty1 = Piece(.empty)
+let empty2 = Piece(.empty)
