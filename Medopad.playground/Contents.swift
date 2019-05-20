@@ -71,7 +71,11 @@ struct Position {
     }
 }
 
+
+// MARK: Typeliases
 typealias Region = (Position) -> Bool
+
+//: Instead of defining an object or struct to represent regions, we represent a region by a *function* that determines if a given point is in the region or not
 
 typealias GridNumber = Int
 
@@ -135,38 +139,36 @@ struct Board: Griddable {
     // Initial position for each piece
     func initialGridSpace() -> GridSpaces {
         var gridSpaces: GridSpace = []
+        
         return { pieces in
+            pieces.forEach { piece in
+                switch piece.name {
+                case .tall1:
+                    gridSpaces.append(Position(1,5))
+                case .fatPiece:
+                    gridSpaces.append(contentsOf: [Position(2,6), Position(3,7)])
+                case .tall2:
+                    gridSpaces.append(Position(4,8))
+                case .tall3:
+                    gridSpaces.append(Position(9,13))
+                case .widePiece:
+                    gridSpaces.append(contentsOf: [Position(10), Position(11)])
+                case .tall4:
+                    gridSpaces.append(Position(12,16))
+                case .normal1:
+                    gridSpaces.append(Position(14))
+                case .normal2:
+                    gridSpaces.append(Position(15))
+                case .normal3:
+                    gridSpaces.append(Position(17))
+                case .normal4:
+                    gridSpaces.append(Position(20))
+                default:
+                    break
+                }
+            }
             
-            
-            
-//            pieces.forEach { piece in
-//                switch piece.name {
-//                case .tall1:
-//                    return [Position(1,5)]
-//                case .fatPiece:
-//                    return [Position(2,6), Position(3,7)]
-//                case .tall2:
-//                    return [Position(4,8)]
-//                case .tall3:
-//                    return [Position(9,13)]
-//                case .widePiece:
-//                    return [Position(10), Position(11)]
-//                case .tall4:
-//                    return [Position(12,16)]
-//                case .normal1:
-//                    return [Position(14)]
-//                case .normal2:
-//                    return [Position(15)]
-//                case .normal3:
-//                    return [Position(17)]
-//                case .normal4:
-//                    return [Position(20)]
-//                default:
-//                    return [Position(0)] // TODO: This position is invalid, build some type of error-checking for it
-//                }
-//            }
-            
-            return [Position(1)]
+            return gridSpaces
         }
     }
     
@@ -193,23 +195,23 @@ struct Board: Griddable {
         return false
     }
     
-    private func emptyRegion() -> Region {
-        return { point in
+    /*private*/ func emptyRegion() -> Region {
+        return { position in
             
             // These need to be true by default, because if they don't exist, we don't care about them
             var emptyX = true
             var emptyY = true
             
-            if let x = point.x {
+            // TODO: Rewrite this, we can't use the index, but using it here just for testing
+            if let x = position.x {
                 emptyX = self.pieces[x].type == .empty
             }
-            if let y = point.y {
+            if let y = position.y {
                 emptyY = self.pieces[y].type == .empty
             }
             
             return emptyX && emptyY
         }
-//        return { position in false }
     }
     
     private func fits(piece: Piece) -> Region {
@@ -221,6 +223,15 @@ struct Board: Griddable {
     }
 }
 
+var board = Board()
+let spaces = board.initialGridSpace()
 
+let testTall = Piece(.tall1, .tall)
+let testEmpty = Piece(.empty1, .empty)
 
-let board = Board()
+board.pieces = [testTall, testEmpty]
+
+let emptyTest = board.emptyRegion()
+print(emptyTest)
+
+if emptyTest { print("Yes, the position is empty") }
