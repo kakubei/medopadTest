@@ -65,7 +65,7 @@ struct Position {
     let x: Int?
     let y: Int?
     
-    init(_ x: Int?, _ y: Int?) {
+    init(_ x: Int?, _ y: Int? = nil) {
         self.x = x
         self.y = y
     }
@@ -76,6 +76,7 @@ typealias Region = (Position) -> Bool
 typealias GridNumber = Int
 
 typealias GridSpace = [Position]
+typealias GridSpaces = ([Piece]) -> [Position]
 
 
 // MARK: Piece
@@ -123,20 +124,61 @@ struct Board: Griddable {
         let empty1 = Piece(.empty1, .empty)
         let empty2 = Piece(.empty2, .empty)
         
-        // normal1 and 2 are between the descendant of tall3 and 4
-        let initialPiecesPosition = [
+        pieces = [
             tall1, fatPiece, tall2,
             tall3, widePiece, tall4,
             normal1, normal2,
             normal3, empty1, empty2, normal4
         ]
-        
-        pieces = initialPiecesPosition
+    }
+    
+    // Initial position for each piece
+    func initialGridSpace() -> GridSpaces {
+        var gridSpaces: GridSpace = []
+        return { pieces in
+            
+            
+            
+//            pieces.forEach { piece in
+//                switch piece.name {
+//                case .tall1:
+//                    return [Position(1,5)]
+//                case .fatPiece:
+//                    return [Position(2,6), Position(3,7)]
+//                case .tall2:
+//                    return [Position(4,8)]
+//                case .tall3:
+//                    return [Position(9,13)]
+//                case .widePiece:
+//                    return [Position(10), Position(11)]
+//                case .tall4:
+//                    return [Position(12,16)]
+//                case .normal1:
+//                    return [Position(14)]
+//                case .normal2:
+//                    return [Position(15)]
+//                case .normal3:
+//                    return [Position(17)]
+//                case .normal4:
+//                    return [Position(20)]
+//                default:
+//                    return [Position(0)] // TODO: This position is invalid, build some type of error-checking for it
+//                }
+//            }
+            
+            return [Position(1)]
+        }
     }
     
     /* Maps piece to grid spaces it occupies, based on its width and height and position */
     private func  gridSpaces() {
-        
+        pieces.forEach { piece in
+            let initialPosition = 1 // TODO: Replace this with something valid
+            
+            let x = initialPosition + piece.type.width
+            let y = initialPosition + piece.type.height
+            let pieceSpace = [Position(x, y)]
+        }
     }
     
     // TODO: Make this functional!
@@ -149,14 +191,6 @@ struct Board: Griddable {
         // TODO: Convert Region to Bool
 
         return false
-    }
-    
-    private func gridSpace(for piece: Piece) {
-        guard let gridCoordinates: Int = (pieces.firstIndex { $0.name == piece.name }) else {
-            return
-        }
-        
-        
     }
     
     private func emptyRegion() -> Region {
