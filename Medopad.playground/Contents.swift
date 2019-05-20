@@ -1,6 +1,14 @@
 import UIKit
 
-let position: CGPoint = CGPoint(x: 1, y: 2)
+
+enum PieceName: String {
+    case tall1, tall2, tall3, tall4
+    case fatPiece
+    case widePiece
+    case normal1, normal2, normal3, normal4
+    case empty1, empty2
+    case boardPiece
+}
 
 enum PieceType {
     case tall, fat, wide, normal, empty, board
@@ -41,7 +49,8 @@ enum PieceType {
 }
 
 protocol Griddable {
-    var name: PieceType { get }
+    var name: PieceName { get }
+    var type: PieceType { get }
     var movable: Bool { get }
 }
 
@@ -64,40 +73,69 @@ struct Position {
 
 typealias Region = (Position) -> Bool
 
-typealias GridSpace = Int
+typealias GridNumber = Int
 
+typealias GridSpace = [Position]
+
+
+// MARK: Piece
 struct Piece: Griddable {
-    var name: PieceType
-    var gridSpace: [GridSpace] = []
+    var name: PieceName
+    var type: PieceType
     
-    init(_ name: PieceType) {
+    init(_ name: PieceName, _ type: PieceType) {
         self.name = name
-        setGridSpace()
-    }
-    
-    private func setGridSpace() {
-        /*
-         1. from its origin (top left)...
-         2. based on its type...
-         3. add X or Y to the grid
-         4. account for the origin as well
-        */
-        
-        
+        self.type = type
     }
 }
 
+// MARK: Board
 struct Board: Griddable {
-    var name: PieceType = .board
+    var name: PieceName = .boardPiece
+    var type: PieceType = .board
     var movable: Bool = false
     
     var pieces: [Piece] = []
     
-    init(pieces: [Piece]) {
-        self.pieces = pieces
+    init() {
+        setupBoard()
     }
     
-    public func move(piece: Piece, to: Position) {
+    public func move(piece: Piece, to: GridNumber) {
+        
+    }
+    
+    mutating private func setupBoard() {
+        // MARK: Pieces
+        let tall1 = Piece(.tall1, .tall)
+        let tall2 = Piece(.tall2, .tall)
+        let tall3 = Piece(.tall3, .tall)
+        let tall4 = Piece(.tall4, .tall)
+        
+        let fatPiece = Piece(.fatPiece, .fat)
+        let widePiece = Piece(.widePiece, .wide)
+        
+        let normal1 = Piece(.normal1, .normal)
+        let normal2 = Piece(.normal2, .normal)
+        let normal3 = Piece(.normal3, .normal)
+        let normal4 = Piece(.normal4, .normal)
+        
+        let empty1 = Piece(.empty1, .empty)
+        let empty2 = Piece(.empty2, .empty)
+        
+        // normal1 and 2 are between the descendant of tall3 and 4
+        let initialPiecesPosition = [
+            tall1, fatPiece, tall2,
+            tall3, widePiece, tall4,
+            normal1, normal2,
+            normal3, empty1, empty2, normal4
+        ]
+        
+        pieces = initialPiecesPosition
+    }
+    
+    /* Maps piece to grid spaces it occupies, based on its width and height and position */
+    private func  gridSpaces() {
         
     }
     
@@ -113,6 +151,14 @@ struct Board: Griddable {
         return false
     }
     
+    private func gridSpace(for piece: Piece) {
+        guard let gridCoordinates: Int = (pieces.firstIndex { $0.name == piece.name }) else {
+            return
+        }
+        
+        
+    }
+    
     private func emptyRegion() -> Region {
         return { point in
             
@@ -121,10 +167,10 @@ struct Board: Griddable {
             var emptyY = true
             
             if let x = point.x {
-                emptyX = self.pieces[x].name == .empty
+                emptyX = self.pieces[x].type == .empty
             }
             if let y = point.y {
-                emptyY = self.pieces[y].name == .empty
+                emptyY = self.pieces[y].type == .empty
             }
             
             return emptyX && emptyY
@@ -135,25 +181,12 @@ struct Board: Griddable {
     private func fits(piece: Piece) -> Region {
         // true if both width and height are moving to .empty positions
         return { _ in
-            self.pieces[piece.name.width].name == .empty &&
-            self.pieces[piece.name.height].name == .empty
+            self.pieces[piece.type.width].type == .empty &&
+            self.pieces[piece.type.height].type == .empty
         }
     }
 }
 
-// MARK: Pieces
-let tall1 = Piece(.tall)
-let tall2 = Piece(.tall)
-let tall3 = Piece(.tall)
-let tall4 = Piece(.tall)
 
-let fat = Piece(.fat)
-let wide = Piece(.wide)
 
-let normal1 = Piece(.normal)
-let normal2 = Piece(.normal)
-let normal3 = Piece(.normal)
-let normal4 = Piece(.normal)
-
-let empty1 = Piece(.empty)
-let empty2 = Piece(.empty)
+let board = Board()
