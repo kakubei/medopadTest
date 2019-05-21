@@ -60,12 +60,11 @@ extension Griddable {
     }
 }
 
-// Pssition properties need to be optionals because we have 1x1 pieces
 struct Position {
-    let x: Int?
-    let y: Int?
+    let x: Int
+    let y: Int
     
-    init(_ x: Int?, _ y: Int? = nil) {
+    init(_ x: Int, _ y: Int) {
         self.x = x
         self.y = y
     }
@@ -87,6 +86,7 @@ typealias GridSpaces = ([Piece]) -> [Position]
 struct Piece: Griddable {
     var name: PieceName
     var type: PieceType
+    var position = Position(0,0) // 0,0 means not on the board
     
     init(_ name: PieceName, _ type: PieceType) {
         self.name = name
@@ -134,53 +134,59 @@ struct Board: Griddable {
             normal1, normal2,
             normal3, empty1, empty2, normal4
         ]
+        
+        initialPiecesPosition()
     }
     
     // Initial position for each piece
-    func initialGridSpace() -> GridSpaces {
-        var gridSpaces: GridSpace = []
+    mutating func initialPiecesPosition() {
         
-        return { pieces in
-            pieces.forEach { piece in
-                switch piece.name {
-                case .tall1:
-                    gridSpaces.append(Position(1,5))
-                case .fatPiece:
-                    gridSpaces.append(contentsOf: [Position(2,6), Position(3,7)])
-                case .tall2:
-                    gridSpaces.append(Position(4,8))
-                case .tall3:
-                    gridSpaces.append(Position(9,13))
-                case .widePiece:
-                    gridSpaces.append(contentsOf: [Position(10), Position(11)])
-                case .tall4:
-                    gridSpaces.append(Position(12,16))
-                case .normal1:
-                    gridSpaces.append(Position(14))
-                case .normal2:
-                    gridSpaces.append(Position(15))
-                case .normal3:
-                    gridSpaces.append(Position(17))
-                case .normal4:
-                    gridSpaces.append(Position(20))
-                default:
-                    break
-                }
-            }
+        pieces.forEach { piece in
             
-            return gridSpaces
+            guard let pieceIndex = (pieces.firstIndex() { $0.name == piece.name }) else { return }
+            
+            switch piece.name {
+            case .tall1:
+                pieces[pieceIndex].position = Position(1,1)
+            case .fatPiece:
+                pieces[pieceIndex].position = Position(2,2)
+            case .tall2:
+                pieces[pieceIndex].position = Position(4,1)
+            case .tall3:
+                pieces[pieceIndex].position = Position(1,3)
+            case .widePiece:
+                pieces[pieceIndex].position = Position(2,3)
+            case .tall4:
+                pieces[pieceIndex].position = Position(4,3)
+            case .normal1:
+                pieces[pieceIndex].position = Position(2,4)
+            case .normal2:
+                pieces[pieceIndex].position = Position(3,4)
+            case .normal3:
+                pieces[pieceIndex].position = Position(1,5)
+            case .normal4:
+                pieces[pieceIndex].position = Position(4,5)
+            default:
+                break
+            }
         }
     }
     
     /* Maps piece to grid spaces it occupies, based on its width and height and position */
-    private func  gridSpaces() {
-        pieces.forEach { piece in
-            let initialPosition = 1 // TODO: Replace this with something valid
-            
-            let x = initialPosition + piece.type.width
-            let y = initialPosition + piece.type.height
-            let pieceSpace = [Position(x, y)]
+    private func  gridSpaces(for piece: Piece) -> GridSpace {
+        var gridSpace = [Position(piece.position.x, piece.position.y)]
+        
+        let extraX = piece.type.width > 1 ? piece.position.x + piece.type.width : piece.position.x
+        let extraY = piece.type.height > 1 ? piece.position.y + piece.type.height : piece.position.y
+        
+        let hasExtraX = extraX != piece.position.x
+        let hasExtraY = extraY != piece.position.y
+        
+        if hasExtraX || hasExtraY {
+            gridSpace.append(Position(extraX, extraY))
         }
+        
+        return gridSpace
     }
     
     // TODO: Make this functional!
@@ -234,4 +240,4 @@ board.pieces = [testTall, testEmpty]
 let emptyTest = board.emptyRegion()
 print(emptyTest)
 
-if emptyTest { print("Yes, the position is empty") }
+//if emptyTest { print("Yes, the position is empty") }
