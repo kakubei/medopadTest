@@ -1,5 +1,5 @@
 import UIKit
-
+import XCTest
 
 enum PieceName: String {
     case tall1, tall2, tall3, tall4
@@ -68,6 +68,10 @@ struct Position {
         self.x = x
         self.y = y
     }
+}
+
+extension Position: Equatable {
+    
 }
 
 
@@ -142,7 +146,6 @@ struct Board: Griddable {
     mutating func initialPiecesPosition() {
         
         pieces.forEach { piece in
-            
             guard let pieceIndex = (pieces.firstIndex() { $0.name == piece.name }) else { return }
             
             switch piece.name {
@@ -173,11 +176,11 @@ struct Board: Griddable {
     }
     
     /* Maps piece to grid spaces it occupies, based on its width and height and position */
-    private func  gridSpaces(for piece: Piece) -> GridSpace {
+    /* private */ func  gridSpaces(for piece: Piece) -> GridSpace {
         var gridSpace = [Position(piece.position.x, piece.position.y)]
         
-        let extraX = piece.type.width > 1 ? piece.position.x + piece.type.width : piece.position.x
-        let extraY = piece.type.height > 1 ? piece.position.y + piece.type.height : piece.position.y
+        let extraX = piece.type.width > 1 ? piece.position.x + 1 : piece.position.x
+        let extraY = piece.type.height > 1 ? piece.position.y + 1 : piece.position.y
         
         let hasExtraX = extraX != piece.position.x
         let hasExtraY = extraY != piece.position.y
@@ -193,7 +196,7 @@ struct Board: Griddable {
     private func canMove(piece: Piece, to position: Position) -> Bool {
         // 1. can only move if positions are empty
         // 2. if empty, does the piece fit?
-        let regionIsEmpty = emptyRegion()
+//        let regionIsEmpty = emptyRegion()
         let pieceFits = fits(piece: piece)
         
         // TODO: Convert Region to Bool
@@ -201,7 +204,8 @@ struct Board: Griddable {
         return false
     }
     
-    /*private*/ func emptyRegion() -> Region {
+    /*
+    /* private */ func emptyRegion() -> Region {
         return { position in
             
             // These need to be true by default, because if they don't exist, we don't care about them
@@ -219,6 +223,7 @@ struct Board: Griddable {
             return emptyX && emptyY
         }
     }
+    */
     
     private func fits(piece: Piece) -> Region {
         // true if both width and height are moving to .empty positions
@@ -230,14 +235,38 @@ struct Board: Griddable {
 }
 
 var board = Board()
-let spaces = board.initialGridSpace()
 
-let testTall = Piece(.tall1, .tall)
-let testEmpty = Piece(.empty1, .empty)
+class Tests: XCTestCase {
+    
+    // MARK: Initial pieces position
+    func testFirstPieceGridSpace() {
+        let firstPiece = board.pieces.first!
+        XCTAssertEqual(firstPiece.name, PieceName.tall1, "Incorrect piece")
+        testTallDimesions(for: firstPiece)
+        
+        let firstPieceSpace = board.gridSpaces(for: firstPiece)
+        let expectedSpace = [Position(1,1), Position(1,2)]
+        XCTAssertEqual(firstPieceSpace, expectedSpace, "firstPieceSpace is: \(firstPieceSpace) and should be: \(expectedSpace)")
+    }
+    
+    func testTall3GridSpace() {
+        guard let tall3Index = (board.pieces.firstIndex { $0.name == .tall3 }) else { return }
+        let tall3 = board.pieces[tall3Index]
+        testTallDimesions(for: tall3)
+        
+        let pieceSpace = board.gridSpaces(for: tall3)
+        let expectedSpace = [Position(1,3), Position(1,4)]
+        XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
+    }
+    
+    
+    
+    // MARK: Helper
+    func testTallDimesions(for piece: Piece) {
+        XCTAssertEqual(piece.type.width, 1, "Incorrect width")
+        XCTAssertEqual(piece.type.height, 2, "Incorrect height")
+    }
+}
 
-board.pieces = [testTall, testEmpty]
+Tests.defaultTestSuite.run()
 
-let emptyTest = board.emptyRegion()
-print(emptyTest)
-
-//if emptyTest { print("Yes, the position is empty") }
