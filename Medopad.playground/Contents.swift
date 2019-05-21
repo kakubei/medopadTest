@@ -152,7 +152,7 @@ struct Board: Griddable {
             case .tall1:
                 pieces[pieceIndex].position = Position(1,1)
             case .fatPiece:
-                pieces[pieceIndex].position = Position(2,2)
+                pieces[pieceIndex].position = Position(2,1)
             case .tall2:
                 pieces[pieceIndex].position = Position(4,1)
             case .tall3:
@@ -173,23 +173,6 @@ struct Board: Griddable {
                 break
             }
         }
-    }
-    
-    /* Maps piece to grid spaces it occupies, based on its width and height and position */
-    /* private */ func  gridSpaces(for piece: Piece) -> GridSpace {
-        var gridSpace = [Position(piece.position.x, piece.position.y)]
-        
-        let extraX = piece.type.width > 1 ? piece.position.x + 1 : piece.position.x
-        let extraY = piece.type.height > 1 ? piece.position.y + 1 : piece.position.y
-        
-        let hasExtraX = extraX != piece.position.x
-        let hasExtraY = extraY != piece.position.y
-        
-        if hasExtraX || hasExtraY {
-            gridSpace.append(Position(extraX, extraY))
-        }
-        
-        return gridSpace
     }
     
     // TODO: Make this functional!
@@ -232,27 +215,72 @@ struct Board: Griddable {
             self.pieces[piece.type.height].type == .empty
         }
     }
+    
+    /* Maps piece to grid spaces it occupies, based on its width and height and position */
+    internal func  gridSpaces(for piece: Piece) -> GridSpace {
+        var gridSpace = [Position(piece.position.x, piece.position.y)]
+        
+        let extraX = piece.type.width > 1 ? piece.position.x + 1 : piece.position.x
+        let extraY = piece.type.height > 1 ? piece.position.y + 1 : piece.position.y
+        
+        // TODO: Better, more succinct code below?
+        
+        let hasExtraX = extraX != piece.position.x
+        let hasExtraY = extraY != piece.position.y
+        
+        if hasExtraX {
+            gridSpace.append(Position(extraX, piece.position.y))
+        }
+        
+        if hasExtraY {
+            gridSpace.append(Position(piece.position.x, extraY))
+        }
+        
+        if hasExtraX && hasExtraY {
+            gridSpace.append(Position(extraX, extraY))
+        }
+        
+        return gridSpace
+    }
 }
 
-var board = Board()
+let board = Board()
 
 class Tests: XCTestCase {
+   
+    let board = Board()
     
     // MARK: Initial pieces position
-    func testFirstPieceGridSpace() {
-        let firstPiece = board.pieces.first!
-        XCTAssertEqual(firstPiece.name, PieceName.tall1, "Incorrect piece")
-        testTallDimesions(for: firstPiece)
+    func testTall1GridSpace() {
+        let tall1 = try! pieceFromArray(for: .tall1)
+        testDimesions(for: tall1)
         
-        let firstPieceSpace = board.gridSpaces(for: firstPiece)
+        let pieceSpace = board.gridSpaces(for: tall1)
         let expectedSpace = [Position(1,1), Position(1,2)]
-        XCTAssertEqual(firstPieceSpace, expectedSpace, "firstPieceSpace is: \(firstPieceSpace) and should be: \(expectedSpace)")
+        XCTAssertEqual(pieceSpace, expectedSpace, "wrong grid space for piece")
+    }
+    
+    func testTall2GridSpace() {
+        let tall2 = try! pieceFromArray(for: .tall2)
+        testDimesions(for: tall2)
+        
+        let pieceSpace = board.gridSpaces(for: tall2)
+        let expectedSpace = [Position(4,1), Position(4,2)]
+        XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
+    }
+    
+    func testFatPieceGridSpace() {
+        let fatPiece = try! pieceFromArray(for: .fatPiece)
+        testDimesions(for: fatPiece)
+        
+        let pieceSpace = board.gridSpaces(for: fatPiece)
+        let expectedSpace = [Position(2,1), Position(3,1), Position(2,2), Position(3,2)]
+        XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
     }
     
     func testTall3GridSpace() {
-        guard let tall3Index = (board.pieces.firstIndex { $0.name == .tall3 }) else { return }
-        let tall3 = board.pieces[tall3Index]
-        testTallDimesions(for: tall3)
+        let tall3 = try! pieceFromArray(for: .tall3)
+        testDimesions(for: tall3)
         
         let pieceSpace = board.gridSpaces(for: tall3)
         let expectedSpace = [Position(1,3), Position(1,4)]
@@ -261,11 +289,49 @@ class Tests: XCTestCase {
     
     
     
-    // MARK: Helper
-    func testTallDimesions(for piece: Piece) {
-        XCTAssertEqual(piece.type.width, 1, "Incorrect width")
-        XCTAssertEqual(piece.type.height, 2, "Incorrect height")
+    // MARK: Helpers
+    
+    enum CustomError: Error {
+        case badPieceName
     }
+    
+    func pieceFromArray(for name: PieceName) throws -> Piece {
+        guard let pieceIndex = (board.pieces.firstIndex { $0.name == name }) else {
+            throw CustomError.badPieceName
+        }
+        
+        return board.pieces[pieceIndex]
+    }
+    
+    func testDimesions(for piece: Piece) {
+        var expectedWidth: Int = 0
+        var expectedHeight: Int = 0
+        
+        switch piece.type {
+        case .tall:
+            expectedWidth = 1
+            expectedHeight = 2
+        case .fat:
+            expectedWidth = 2
+            expectedHeight = 2
+        case .wide:
+            expectedWidth = 2
+            expectedHeight = 1
+        case .normal:
+            expectedWidth = 1
+            expectedHeight = 1
+        case .empty:
+            expectedWidth = 1
+            expectedHeight = 1
+        default:
+            print("nothing to do")
+        }
+        
+        XCTAssertEqual(piece.type.width, expectedWidth, "Incorrect width")
+        XCTAssertEqual(piece.type.height, expectedHeight, "Incorrect height")
+        
+    }
+    
 }
 
 Tests.defaultTestSuite.run()
