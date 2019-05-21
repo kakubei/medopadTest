@@ -20,7 +20,7 @@ enum PieceType {
         case .fat:
             return 2
         case .wide:
-            return 1
+            return 2
         case .normal:
             return 1
         case .empty:
@@ -37,7 +37,7 @@ enum PieceType {
         case .fat:
             return 2
         case .wide:
-            return 2
+            return 1
         case .normal:
             return 1
         case .empty:
@@ -287,6 +287,50 @@ class Tests: XCTestCase {
         XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
     }
     
+    func testWidePieceGridSpace() {
+        let widePiece = try! pieceFromArray(for: .widePiece)
+        testDimesions(for: widePiece)
+        
+        let pieceSpace = board.gridSpaces(for: widePiece)
+        let expectedSpace = [Position(2,3), Position(3,3)]
+        XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
+    }
+    
+    func testNormal1GridSpace() {
+        let normal1 = try! pieceFromArray(for: .normal1)
+        testDimesions(for: normal1)
+        
+        let pieceSpace = board.gridSpaces(for: normal1)
+        let expectedSpace = [Position(2,4)]
+        XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
+    }
+    
+    func testNormal2GridSpace() {
+        let normal2 = try! pieceFromArray(for: .normal2)
+        testDimesions(for: normal2)
+        
+        let pieceSpace = board.gridSpaces(for: normal2)
+        let expectedSpace = [Position(3,4)]
+        XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
+    }
+    
+    func testNormal3GridSpace() {
+        let normal3 = try! pieceFromArray(for: .normal3)
+        testDimesions(for: normal3)
+        
+        let pieceSpace = board.gridSpaces(for: normal3)
+        let expectedSpace = [Position(1,5)]
+        XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
+    }
+    
+    func testNormal4GridSpace() {
+        let normal4 = try! pieceFromArray(for: .normal4)
+        testDimesions(for: normal4)
+        
+        let pieceSpace = board.gridSpaces(for: normal4)
+        let expectedSpace = [Position(4,5)]
+        XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
+    }
     
     
     // MARK: Helpers
