@@ -71,7 +71,9 @@ struct Position {
 }
 
 extension Position: Equatable {
-    
+    static func ==(lhs: Position, rhs: Position) -> Bool {
+        return lhs.x == rhs.x && lhs.y == rhs.y
+    }
 }
 
 
@@ -79,8 +81,6 @@ extension Position: Equatable {
 typealias Region = (Position) -> Bool
 
 //: Instead of defining an object or struct to represent regions, we represent a region by a *function* that determines if a given point is in the region or not
-
-typealias GridNumber = Int
 
 typealias GridSpace = [Position]
 typealias GridSpaces = ([Piece]) -> [Position]
@@ -110,7 +110,7 @@ struct Board: Griddable {
         setupBoard()
     }
     
-    public func move(piece: Piece, to: GridNumber) {
+    public func move(piece: Piece, to: Position) {
         
     }
     
@@ -176,15 +176,39 @@ struct Board: Griddable {
     }
     
     // TODO: Make this functional!
-    private func canMove(piece: Piece, to position: Position) -> Bool {
+    internal func canMove(piece: Piece, to position: Position) -> Bool {
         // 1. can only move if positions are empty
         // 2. if empty, does the piece fit?
-//        let regionIsEmpty = emptyRegion()
+        let positionIsEmpty = isEmpty(position: position)
+        
+        // No need to keep going to iterate through whether the piece fits, space is not empty so return false immediately
+        if !positionIsEmpty {
+            return false
+        }
+        
         let pieceFits = fits(piece: piece)
         
-        // TODO: Convert Region to Bool
-
-        return false
+        return positionIsEmpty && pieceFits
+    }
+    
+    // TODO: Make this functional
+    //... we could throw an error if position is invalid or out of bounds
+    //... but the outcome of it not being empty is the same, really: can't move into it
+    internal func isEmpty(position: Position) -> Bool {
+        guard let piece = (pieces.filter { $0.position == position }.first) else {
+            return false
+        }
+        
+        return piece.type == .empty
+    }
+    
+    
+    internal func fits(piece: Piece) -> Bool {
+        let gridSpace = gridSpaces(for: piece)
+        
+        return gridSpace.allSatisfy { position in
+            isEmpty(position: position)
+        }
     }
     
     /*
@@ -207,14 +231,6 @@ struct Board: Griddable {
         }
     }
     */
-    
-    private func fits(piece: Piece) -> Region {
-        // true if both width and height are moving to .empty positions
-        return { _ in
-            self.pieces[piece.type.width].type == .empty &&
-            self.pieces[piece.type.height].type == .empty
-        }
-    }
     
     /* Maps piece to grid spaces it occupies, based on its width and height and position */
     internal func  gridSpaces(for piece: Piece) -> GridSpace {
