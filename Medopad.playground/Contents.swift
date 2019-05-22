@@ -169,6 +169,10 @@ struct Board: Griddable {
                 pieces[pieceIndex].position = Position(1,5)
             case .normal4:
                 pieces[pieceIndex].position = Position(4,5)
+            case .empty1:
+                pieces[pieceIndex].position = Position(2,5)
+            case .empty2:
+                pieces[pieceIndex].position = Position(3,5)
             default:
                 break
             }
@@ -348,8 +352,39 @@ class Tests: XCTestCase {
         XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
     }
     
+    func testEmptyGridSpace() {
+        let empty1 = try! pieceFromArray(for: .empty1)
+        let empty2 = try! pieceFromArray(for: .empty2)
+        
+        let empty1Space = board.gridSpaces(for: empty1)
+        let empty2Space = board.gridSpaces(for: empty2)
+        
+        let empty1ExpectedSpace = [Position(2,5)]
+        let empty2ExpectedSpace = [Position(3,5)]
+        
+        XCTAssertEqual(empty1Space, empty1ExpectedSpace)
+        XCTAssertEqual(empty2Space, empty2ExpectedSpace)
+    }
     
-    // MARK: Helpers
+    func testInitialEmpties() {
+        let shouldBeEmpty1 = board.isEmpty(position: Position(2,5))
+        let shouldBeEmtpy2 = board.isEmpty(position: Position(3,5))
+        
+        XCTAssertTrue(shouldBeEmpty1)
+        XCTAssertTrue(shouldBeEmtpy2)
+    }
+    
+    func testNotEmpty() {
+        let fatPiece = try! pieceFromArray(for: .fatPiece)
+        let pieceSpace = board.gridSpaces(for: fatPiece)
+        XCTAssertFalse(board.isEmpty(position: fatPiece.position))
+        
+        let fatSpacesEmpty = pieceSpace.allSatisfy { board.isEmpty(position: $0) }
+        XCTAssertFalse(fatSpacesEmpty)
+    }
+    
+    
+    // MARK: Test Helpers
     
     enum CustomError: Error {
         case badPieceName
