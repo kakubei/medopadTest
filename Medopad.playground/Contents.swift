@@ -104,16 +104,12 @@ struct Board: Griddable {
     var type: PieceType = .board
     var movable: Bool = false
     
+    public let size: Position
+    
     var pieces: [Piece] = []
     
-    enum Direction {
-        case right, left, down, up
-    }
-    
-    let minPosion = Position(1,1)
-    let maxPosition = Position(4,5)
-    
-    init() {
+    init(size: Position) {
+        self.size = size
         setupBoard()
     }
 
@@ -181,6 +177,26 @@ struct Board: Griddable {
             }
         }
     }
+
+}
+
+struct MoveManager {
+
+    private enum Direction {
+        case right, left, down, up
+    }
+    
+    // TODO: Make this generic
+    private var board: Board
+    
+    private let minPosion = Position(1,1)
+    private let maxPosition: Position
+    
+    
+    init(for board: Board) {
+        self.board = board
+        maxPosition = board.size
+    }
     
     // WARNING: Needs implementation
     public func moveRight(for piece: Piece) -> Bool {
@@ -202,57 +218,6 @@ struct Board: Griddable {
         return false
     }
     
-    // TODO: Make this functional!
-    internal func canMove(piece: Piece, to position: Position) -> Bool {
-        // 1. can only move if positions are empty
-        // 2. if empty, does the piece fit?
-        let positionIsEmpty = isEmpty(position: position)
-        
-        // No need to keep going to iterate through whether the piece fits, space is not empty so return false immediately
-        if !positionIsEmpty {
-            return false
-        }
-        
-        let pieceFits = fits(piece: piece, in: position)
-        
-        return positionIsEmpty && pieceFits
-    }
-    
-    private func shiftPosition(_ position: Position, to direction: Direction) -> Position {
-        switch direction {
-        case .right:
-            return Position(position.x + 1, position.y)
-        case .left:
-            return Position(position.x - 1, position.y)
-        case .down:
-            return Position(position.x, position.y + 1)
-        case .up:
-            return Position(position.x, position.y - 1)
-        }
-    }
-    
-    // TODO: Make this functional
-    //... we could throw an error if position is invalid or out of bounds
-    //... but the outcome of it not being empty is the same, really: can't move into it
-    internal func isEmpty(position: Position) -> Bool {
-        guard let piece = (pieces.filter { $0.position == position }.first) else {
-            return false
-        }
-        
-        return piece.type == .empty
-    }
-    
-    
-    internal func fits(piece: Piece, in newPosition: Position) -> Bool {
-        var potentialPiece = piece
-        potentialPiece.position = newPosition
-        let gridSpace = gridSpaces(for: potentialPiece)
-        
-        return gridSpace.allSatisfy { newPosition in
-            isEmpty(position: newPosition)
-        }
-    }
-
     /* Maps piece to grid spaces it occupies, based on its width and height and position */
     internal func  gridSpaces(for piece: Piece) -> GridSpace {
         var gridSpace = [Position(piece.position.x, piece.position.y)]
@@ -279,20 +244,70 @@ struct Board: Griddable {
         
         return gridSpace
     }
+    
+    internal func isEmpty(_ position: Position) -> Bool {
+        guard let piece = (board.pieces.filter { $0.position == position }.first) else {
+            return false
+        }
+        
+        return piece.type == .empty
+    }
+    
+    // TODO: Make this functional!
+    internal func canMove(piece: Piece, to position: Position) -> Bool {
+        // 1. can only move if positions are empty
+        // 2. if empty, does the piece fit?
+        let positionIsEmpty = isEmpty(position)
+        
+        // No need to keep going to iterate through whether the piece fits, space is not empty so return false immediately
+        if !positionIsEmpty {
+            return false
+        }
+        
+        let pieceFits = fits(piece: piece, in: position)
+        
+        return positionIsEmpty && pieceFits
+    }
+    
+    internal func fits(piece: Piece, in newPosition: Position) -> Bool {
+        var potentialPiece = piece
+        potentialPiece.position = newPosition
+        let gridSpace = gridSpaces(for: potentialPiece)
+        
+        return gridSpace.allSatisfy { newPosition in
+            isEmpty(newPosition)
+        }
+    }
+    
+    private func shiftPosition(_ position: Position, to direction: Direction) -> Position {
+        switch direction {
+        case .right:
+            return Position(position.x + 1, position.y)
+        case .left:
+            return Position(position.x - 1, position.y)
+        case .down:
+            return Position(position.x, position.y + 1)
+        case .up:
+            return Position(position.x, position.y - 1)
+        }
+    }
+    
 }
 
-let board = Board()
+let board = Board(size: Position(4,5))
+
 
 class Tests: XCTestCase {
    
-    let board = Board()
-    
+    let board = Board(size: Position(4,5))
+    var moveManager = MoveManager(for: Board(size: Position(4,5))) // workaround for not being able to use setup() function here
+
     // MARK: Initial pieces position
     func testTall1GridSpace() {
         let tall1 = try! pieceFromArray(for: .tall1)
         testDimesions(for: tall1)
         
-        let pieceSpace = board.gridSpaces(for: tall1)
+        let pieceSpace = moveManager.gridSpaces(for: tall1)
         let expectedSpace = [Position(1,1), Position(1,2)]
         XCTAssertEqual(pieceSpace, expectedSpace, "wrong grid space for piece")
     }
@@ -301,7 +316,7 @@ class Tests: XCTestCase {
         let tall2 = try! pieceFromArray(for: .tall2)
         testDimesions(for: tall2)
         
-        let pieceSpace = board.gridSpaces(for: tall2)
+        let pieceSpace = moveManager.gridSpaces(for: tall2)
         let expectedSpace = [Position(4,1), Position(4,2)]
         XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
     }
@@ -310,7 +325,7 @@ class Tests: XCTestCase {
         let fatPiece = try! pieceFromArray(for: .fatPiece)
         testDimesions(for: fatPiece)
         
-        let pieceSpace = board.gridSpaces(for: fatPiece)
+        let pieceSpace = moveManager.gridSpaces(for: fatPiece)
         let expectedSpace = [Position(2,1), Position(3,1), Position(2,2), Position(3,2)]
         XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
     }
@@ -319,7 +334,7 @@ class Tests: XCTestCase {
         let tall3 = try! pieceFromArray(for: .tall3)
         testDimesions(for: tall3)
         
-        let pieceSpace = board.gridSpaces(for: tall3)
+        let pieceSpace = moveManager.gridSpaces(for: tall3)
         let expectedSpace = [Position(1,3), Position(1,4)]
         XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
     }
@@ -328,7 +343,7 @@ class Tests: XCTestCase {
         let widePiece = try! pieceFromArray(for: .widePiece)
         testDimesions(for: widePiece)
         
-        let pieceSpace = board.gridSpaces(for: widePiece)
+        let pieceSpace = moveManager.gridSpaces(for: widePiece)
         let expectedSpace = [Position(2,3), Position(3,3)]
         XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
     }
@@ -337,7 +352,7 @@ class Tests: XCTestCase {
         let normal1 = try! pieceFromArray(for: .normal1)
         testDimesions(for: normal1)
         
-        let pieceSpace = board.gridSpaces(for: normal1)
+        let pieceSpace = moveManager.gridSpaces(for: normal1)
         let expectedSpace = [Position(2,4)]
         XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
     }
@@ -346,7 +361,7 @@ class Tests: XCTestCase {
         let normal2 = try! pieceFromArray(for: .normal2)
         testDimesions(for: normal2)
         
-        let pieceSpace = board.gridSpaces(for: normal2)
+        let pieceSpace = moveManager.gridSpaces(for: normal2)
         let expectedSpace = [Position(3,4)]
         XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
     }
@@ -355,7 +370,7 @@ class Tests: XCTestCase {
         let normal3 = try! pieceFromArray(for: .normal3)
         testDimesions(for: normal3)
         
-        let pieceSpace = board.gridSpaces(for: normal3)
+        let pieceSpace = moveManager.gridSpaces(for: normal3)
         let expectedSpace = [Position(1,5)]
         XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
     }
@@ -364,7 +379,7 @@ class Tests: XCTestCase {
         let normal4 = try! pieceFromArray(for: .normal4)
         testDimesions(for: normal4)
         
-        let pieceSpace = board.gridSpaces(for: normal4)
+        let pieceSpace = moveManager.gridSpaces(for: normal4)
         let expectedSpace = [Position(4,5)]
         XCTAssertEqual(pieceSpace, expectedSpace, "Wrong grid space for piece")
     }
@@ -373,8 +388,8 @@ class Tests: XCTestCase {
         let empty1 = try! pieceFromArray(for: .empty1)
         let empty2 = try! pieceFromArray(for: .empty2)
         
-        let empty1Space = board.gridSpaces(for: empty1)
-        let empty2Space = board.gridSpaces(for: empty2)
+        let empty1Space = moveManager.gridSpaces(for: empty1)
+        let empty2Space = moveManager.gridSpaces(for: empty2)
         
         let empty1ExpectedSpace = [Position(2,5)]
         let empty2ExpectedSpace = [Position(3,5)]
@@ -384,8 +399,8 @@ class Tests: XCTestCase {
     }
     
     func testInitialEmpties() {
-        let shouldBeEmpty1 = board.isEmpty(position: Position(2,5))
-        let shouldBeEmtpy2 = board.isEmpty(position: Position(3,5))
+        let shouldBeEmpty1 = moveManager.isEmpty(Position(2,5))
+        let shouldBeEmtpy2 = moveManager.isEmpty(Position(3,5))
         
         XCTAssertTrue(shouldBeEmpty1)
         XCTAssertTrue(shouldBeEmtpy2)
@@ -393,39 +408,39 @@ class Tests: XCTestCase {
     
     func testNotEmpty() {
         let fatPiece = try! pieceFromArray(for: .fatPiece)
-        let pieceSpace = board.gridSpaces(for: fatPiece)
-        XCTAssertFalse(board.isEmpty(position: fatPiece.position))
+        let pieceSpace = moveManager.gridSpaces(for: fatPiece)
+        XCTAssertFalse(moveManager.isEmpty(fatPiece.position))
         
-        let fatSpacesEmpty = pieceSpace.allSatisfy { board.isEmpty(position: $0) }
+        let fatSpacesEmpty = pieceSpace.allSatisfy { moveManager.isEmpty($0) }
         XCTAssertFalse(fatSpacesEmpty)
     }
     
     func testShouldFit() {
         let normal1 = try! pieceFromArray(for: .normal1)
         let newPosition = Position(2,5)
-        XCTAssertTrue(board.fits(piece: normal1, in: newPosition))
+        XCTAssertTrue(moveManager.fits(piece: normal1, in: newPosition))
     }
     
     func testShouldNotFit() {
         let fatPiece = try! pieceFromArray(for: .fatPiece)
         let newPosition = Position(2,3)
-        XCTAssertFalse(board.fits(piece: fatPiece, in: newPosition))
+        XCTAssertFalse(moveManager.fits(piece: fatPiece, in: newPosition))
     }
     
     func testShouldMove() {
         let normal1 = try! pieceFromArray(for: .normal1)
         let newPosition = Position(2,5)
-        XCTAssertTrue(board.canMove(piece: normal1, to: newPosition))
+        XCTAssertTrue(moveManager.canMove(piece: normal1, to: newPosition))
     }
     
     func testShouldNotMove() {
         let normal1 = try! pieceFromArray(for: .normal1)
         let newPosition = Position(1,3)
-        XCTAssertFalse(board.canMove(piece: normal1, to: newPosition))
+        XCTAssertFalse(moveManager.canMove(piece: normal1, to: newPosition))
     }
     
     func testEmptyRegion() {
-        let emptySpace = board.gridSpaces(for: try! pieceFromArray(for: .empty1))
+        let emptySpace = moveManager.gridSpaces(for: try! pieceFromArray(for: .empty1))
         
         
     }
