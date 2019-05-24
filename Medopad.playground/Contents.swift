@@ -226,6 +226,7 @@ struct MoveManager {
                 return false
             }
             
+//            guard let emptyPieceIndex = boardPiece.pieces[ self.piece(at: piece.position)
             board.pieces[boardPiece].position = shiftedPosition
             return true
         } catch {
@@ -274,6 +275,10 @@ struct MoveManager {
         }
         
         return gridSpace
+    }
+    
+    internal func piece(at position: Position) -> Piece? {
+        return  board.pieces.filter { $0.position == position }.first ?? nil
     }
     
     internal func isEmpty(_ position: Position) -> Bool {
@@ -342,8 +347,7 @@ let board = Board(size: Position(4,5))
 
 class Tests: XCTestCase {
    
-    let board = Board(size: Position(4,5))
-    var moveManager = MoveManager(for: Board(size: Position(4,5))) // workaround for not being able to use setup() function here
+    var moveManager = MoveManager(for: board) // workaround for not being able to use setup() function here
 
     // MARK: Initial pieces position
     func testTall1GridSpace() {
@@ -481,11 +485,17 @@ class Tests: XCTestCase {
         let newPosition = Position(1,3)
         XCTAssertFalse(moveManager.canMove(piece: normal1, to: newPosition))
     }
+
+    func testShouldMoveRight() {
+        let normal3 = try! pieceFromArray(for: .normal3)
+        XCTAssertTrue(moveManager.moveRight(for: normal3))
+//        XCTAssertTrue(moveManager.moveRight(for: normal3))
+//        XCTAssertFalse(moveManager.moveRight(for: normal3))
+    }
     
-    func testEmptyRegion() {
-        let emptySpace = moveManager.gridSpaces(for: try! pieceFromArray(for: .empty1))
-        
-        
+    func testPieceAtPosition() {
+        let piece = moveManager.piece(at: Position(1,1))
+        XCTAssertEqual(piece?.name, .tall1)
     }
     
     
