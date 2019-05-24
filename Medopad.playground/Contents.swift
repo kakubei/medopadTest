@@ -117,6 +117,16 @@ struct Piece: Griddable {
     }
 }
 
+extension Piece: Equatable {
+    static func ==(lhs: Piece, rhs: Piece) -> Bool {
+        return lhs.name == rhs.name
+    }
+    
+    static func samePosition(lhs: Piece, rhs: Piece) -> Bool {
+        return lhs.position == rhs.position
+    }
+}
+
 // MARK: Board
 class Board: Griddable {
     var name: PieceName = .boardPiece
@@ -217,23 +227,16 @@ struct MoveManager {
         maxPosition = board.size
     }
     
-    // WARNING: Needs implementation
     public func moveRight(for piece: Piece) -> Bool {
         do {
             let shiftedPosition = try shiftPosition(piece.position, to: .right)
-            guard let boardPieceIndex = board.pieces.firstIndex(where: { $0.name == piece.name }),
-                canMove(piece: piece, to: shiftedPosition) else {
+            guard let boardPiece = board.pieces.first(where: { $0.name == piece.name }),
+                canMove(piece: piece, to: shiftedPosition),
+                let emptyPiece = self.piece(at: shiftedPosition) else {
                 return false
             }
             
-            guard let emptyPiece = self.piece(at: shiftedPosition),
-                let emptyPieceIndex = (board.pieces.firstIndex { $0.name == emptyPiece.name }) else {
-                return false
-            }
-            
-            // TODO: Write function to swap pieces' position
-            board.pieces[emptyPieceIndex].position = piece.position
-            board.pieces[boardPieceIndex].position = shiftedPosition
+            swapPosition(firstPiece: boardPiece, secondPiece: emptyPiece)
             return true
         } catch {
             debugPrint("Error trying to move piece right:", error)
@@ -257,7 +260,12 @@ struct MoveManager {
     }
     
     internal func swapPosition(firstPiece: Piece, secondPiece: Piece) {
-        
+        guard let boardPieceIndex = (board.pieces.firstIndex { $0.name == firstPiece.name }),
+            let emptyPieceIndex = (board.pieces.firstIndex { $0.name == secondPiece.name }) else {
+                return
+        }
+        board.pieces[emptyPieceIndex].position = firstPiece.position
+        board.pieces[boardPieceIndex].position = secondPiece.position
     }
     
     /* Maps piece to grid spaces it occupies, based on its width and height and position */
@@ -506,6 +514,14 @@ class Tests: XCTestCase {
     func testPieceAtPosition() {
         let piece = moveManager.piece(at: Position(1,1))
         XCTAssertEqual(piece?.name, .tall1)
+    }
+    
+    func testSwapPosition() {
+        let normal2 = try! pieceFromArray(for: .normal2)
+        let empty2 = try! pieceFromArray(for: .empty2)
+        moveManager.swapPosition(firstPiece: normal2, secondPiece: empty2)
+        XCTAssertEqual(moveManager.piece(at: normal2.position)!, empty2)
+        XCTAssertEqual(moveManager.piece(at: empty2.position)!, normal2)
     }
     
     
