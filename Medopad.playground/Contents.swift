@@ -78,7 +78,7 @@ extension Position: Equatable {
 
 
 // MARK: Typeliases
-typealias Region = (Position) -> Bool
+//typealias Region = (Position) -> Bool
 
 //: Instead of defining an object or struct to represent regions, we represent a region by a *function* that determines if a given point is in the region or not
 
@@ -106,14 +106,17 @@ struct Board: Griddable {
     
     var pieces: [Piece] = []
     
+    enum Direction {
+        case right, left, down, up
+    }
+    
+    let minPosion = Position(1,1)
+    let maxPosition = Position(4,5)
+    
     init() {
         setupBoard()
     }
-    
-    public func move(piece: Piece, to: Position) {
-        
-    }
-    
+
     mutating private func setupBoard() {
         // MARK: Pieces
         let tall1 = Piece(.tall1, .tall)
@@ -179,6 +182,26 @@ struct Board: Griddable {
         }
     }
     
+    // WARNING: Needs implementation
+    public func moveRight(for piece: Piece) -> Bool {
+        return false
+    }
+    
+    // WARNING: Needs implementation
+    public func moveLeft(for piece: Piece) -> Bool {
+        return false
+    }
+    
+    // WARNING: Needs implementation
+    public func moveDown(for piece: Piece) -> Bool {
+        return false
+    }
+    
+    // WARNING: Needs implementation
+    public func moveUp(for piece: Piece) -> Bool {
+        return false
+    }
+    
     // TODO: Make this functional!
     internal func canMove(piece: Piece, to position: Position) -> Bool {
         // 1. can only move if positions are empty
@@ -190,9 +213,22 @@ struct Board: Griddable {
             return false
         }
         
-        let pieceFits = fits(piece: piece)
+        let pieceFits = fits(piece: piece, in: position)
         
         return positionIsEmpty && pieceFits
+    }
+    
+    private func shiftPosition(_ position: Position, to direction: Direction) -> Position {
+        switch direction {
+        case .right:
+            return Position(position.x + 1, position.y)
+        case .left:
+            return Position(position.x - 1, position.y)
+        case .down:
+            return Position(position.x, position.y + 1)
+        case .up:
+            return Position(position.x, position.y - 1)
+        }
     }
     
     // TODO: Make this functional
@@ -207,35 +243,16 @@ struct Board: Griddable {
     }
     
     
-    internal func fits(piece: Piece) -> Bool {
-        let gridSpace = gridSpaces(for: piece)
+    internal func fits(piece: Piece, in newPosition: Position) -> Bool {
+        var potentialPiece = piece
+        potentialPiece.position = newPosition
+        let gridSpace = gridSpaces(for: potentialPiece)
         
-        return gridSpace.allSatisfy { position in
-            isEmpty(position: position)
+        return gridSpace.allSatisfy { newPosition in
+            isEmpty(position: newPosition)
         }
     }
-    
-    /*
-    /* private */ func emptyRegion() -> Region {
-        return { position in
-            
-            // These need to be true by default, because if they don't exist, we don't care about them
-            var emptyX = true
-            var emptyY = true
-            
-            // TODO: Rewrite this, we can't use the index, but using it here just for testing
-            if let x = position.x {
-                emptyX = self.pieces[x].type == .empty
-            }
-            if let y = position.y {
-                emptyY = self.pieces[y].type == .empty
-            }
-            
-            return emptyX && emptyY
-        }
-    }
-    */
-    
+
     /* Maps piece to grid spaces it occupies, based on its width and height and position */
     internal func  gridSpaces(for piece: Piece) -> GridSpace {
         var gridSpace = [Position(piece.position.x, piece.position.y)]
@@ -383,6 +400,38 @@ class Tests: XCTestCase {
         XCTAssertFalse(fatSpacesEmpty)
     }
     
+    func testShouldFit() {
+        let normal1 = try! pieceFromArray(for: .normal1)
+        let newPosition = Position(2,5)
+        XCTAssertTrue(board.fits(piece: normal1, in: newPosition))
+    }
+    
+    func testShouldNotFit() {
+        let fatPiece = try! pieceFromArray(for: .fatPiece)
+        let newPosition = Position(2,3)
+        XCTAssertFalse(board.fits(piece: fatPiece, in: newPosition))
+    }
+    
+    func testShouldMove() {
+        let normal1 = try! pieceFromArray(for: .normal1)
+        let newPosition = Position(2,5)
+        XCTAssertTrue(board.canMove(piece: normal1, to: newPosition))
+    }
+    
+    func testShouldNotMove() {
+        let normal1 = try! pieceFromArray(for: .normal1)
+        let newPosition = Position(1,3)
+        XCTAssertFalse(board.canMove(piece: normal1, to: newPosition))
+    }
+    
+    func testEmptyRegion() {
+        let emptySpace = board.gridSpaces(for: try! pieceFromArray(for: .empty1))
+        
+        
+    }
+    
+    
+    //: ------------------------------
     
     // MARK: Test Helpers
     
