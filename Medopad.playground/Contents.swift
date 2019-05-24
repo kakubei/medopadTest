@@ -76,6 +76,25 @@ extension Position: Equatable {
     }
 }
 
+// Operator overloads for Position
+extension Position {
+    static func >(lhs: Position, rhs: Position) -> Bool {
+        return lhs.x > rhs.x && lhs.y > rhs.y
+    }
+    
+    static func >=(lhs: Position, rhs: Position) -> Bool {
+        return lhs.x >= rhs.x && lhs.y >= rhs.y
+    }
+    
+    static func <(lhs: Position, rhs: Position) -> Bool {
+        return lhs.x < rhs.x && lhs.y < rhs.y
+    }
+    
+    static func <=(lhs: Position, rhs: Position) -> Bool {
+        return lhs.x <= rhs.x && lhs.y <= rhs.y
+    }
+}
+
 
 // MARK: Typeliases
 //typealias Region = (Position) -> Bool
@@ -99,7 +118,7 @@ struct Piece: Griddable {
 }
 
 // MARK: Board
-struct Board: Griddable {
+class Board: Griddable {
     var name: PieceName = .boardPiece
     var type: PieceType = .board
     var movable: Bool = false
@@ -113,7 +132,7 @@ struct Board: Griddable {
         setupBoard()
     }
 
-    mutating private func setupBoard() {
+    private func setupBoard() {
         // MARK: Pieces
         let tall1 = Piece(.tall1, .tall)
         let tall2 = Piece(.tall2, .tall)
@@ -142,7 +161,7 @@ struct Board: Griddable {
     }
     
     // Initial position for each piece
-    mutating func initialPiecesPosition() {
+    func initialPiecesPosition() {
         
         pieces.forEach { piece in
             guard let pieceIndex = (pieces.firstIndex() { $0.name == piece.name }) else { return }
@@ -189,7 +208,7 @@ struct MoveManager {
     // TODO: Make this generic
     private var board: Board
     
-    private let minPosion = Position(1,1)
+    private let minPosition = Position(1,1)
     private let maxPosition: Position
     
     
@@ -200,7 +219,19 @@ struct MoveManager {
     
     // WARNING: Needs implementation
     public func moveRight(for piece: Piece) -> Bool {
-        return false
+        do {
+            let shiftedPosition = try shiftPosition(piece.position, to: .right)
+            guard let boardPiece = board.pieces.firstIndex(where: { $0.name == piece.name }),
+                canMove(piece: piece, to: shiftedPosition) else {
+                return false
+            }
+            
+            board.pieces[boardPiece].position = shiftedPosition
+            return true
+        } catch {
+            debugPrint("Error trying to move piece right:", error)
+            return false
+        }
     }
     
     // WARNING: Needs implementation
@@ -279,17 +310,29 @@ struct MoveManager {
         }
     }
     
-    private func shiftPosition(_ position: Position, to direction: Direction) -> Position {
+    enum MoveError: Error {
+        case outOfBounds
+    }
+    
+    private func shiftPosition(_ position: Position, to direction: Direction) throws -> Position {
+        var shiftedPosition = Position(0,0)
+        
         switch direction {
         case .right:
-            return Position(position.x + 1, position.y)
+            shiftedPosition = Position(position.x + 1, position.y)
         case .left:
-            return Position(position.x - 1, position.y)
+            shiftedPosition = Position(position.x - 1, position.y)
         case .down:
-            return Position(position.x, position.y + 1)
+            shiftedPosition = Position(position.x, position.y + 1)
         case .up:
-            return Position(position.x, position.y - 1)
+            shiftedPosition = Position(position.x, position.y - 1)
         }
+        
+        guard shiftedPosition >= minPosition, shiftedPosition <= maxPosition else {
+            throw MoveError.outOfBounds
+        }
+        
+         return shiftedPosition
     }
     
 }
