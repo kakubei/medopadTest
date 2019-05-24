@@ -221,13 +221,19 @@ struct MoveManager {
     public func moveRight(for piece: Piece) -> Bool {
         do {
             let shiftedPosition = try shiftPosition(piece.position, to: .right)
-            guard let boardPiece = board.pieces.firstIndex(where: { $0.name == piece.name }),
+            guard let boardPieceIndex = board.pieces.firstIndex(where: { $0.name == piece.name }),
                 canMove(piece: piece, to: shiftedPosition) else {
                 return false
             }
             
-//            guard let emptyPieceIndex = boardPiece.pieces[ self.piece(at: piece.position)
-            board.pieces[boardPiece].position = shiftedPosition
+            guard let emptyPiece = self.piece(at: shiftedPosition),
+                let emptyPieceIndex = (board.pieces.firstIndex { $0.name == emptyPiece.name }) else {
+                return false
+            }
+            
+            // TODO: Write function to swap pieces' position
+            board.pieces[emptyPieceIndex].position = piece.position
+            board.pieces[boardPieceIndex].position = shiftedPosition
             return true
         } catch {
             debugPrint("Error trying to move piece right:", error)
@@ -248,6 +254,10 @@ struct MoveManager {
     // WARNING: Needs implementation
     public func moveUp(for piece: Piece) -> Bool {
         return false
+    }
+    
+    internal func swapPosition(firstPiece: Piece, secondPiece: Piece) {
+        
     }
     
     /* Maps piece to grid spaces it occupies, based on its width and height and position */
